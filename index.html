@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="pt-BR" ng-app="dashboardApp">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard – Taxa de Evolução da Obra</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Bootstrap 5 (CDN) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  >
+
+  <!-- AngularJS (CDN) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --color-bg-page: #e9f7ef;
+      --color-bg-card: #ffffff;
+      --color-primary: #22c55e;
+      --color-primary-soft: #bbf7d0;
+      --color-secondary: #4ade80;
+      --color-accent: #f97316;
+      --color-text-main: #111827;
+      --color-text-muted: #6b7280;
+      --color-border-soft: #e5e7eb;
+      --color-border-strong: #d1d5db;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      background: var(--color-bg-page);
+      color: var(--color-text-main);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* Container centralizado e fluido */
+    .main-shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card-dashboard {
+      background: var(--color-bg-card);
+      border-radius: 18px;
+      border: 1px solid var(--color-border-soft);
+      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+      padding: 18px 20px;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      color: #166534;
+      background: #dcfce7;
+    }
+
+    .badge-live span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .kpi-card {
+      background: var(--color-bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--color-border-soft);
+      padding: 14px 16px;
+      height: 100%;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .kpi-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .kpi-tag {
+      font-size: 0.7rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border-soft);
+      color: var(--color-text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f9fafb;
+    }
+
+    .kpi-tag span.color-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+    }
+
+    .kpi-tag.unit-a span.color-dot {
+      background: var(--color-primary);
+    }
+
+    .kpi-tag.unit-b span.color-dot {
+      background: var(--color-secondary);
+    }
+
+    .card-section-title {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .table-dark-custom {
+      --bs-table-bg: #ffffff;
+      --bs-table-border-color: var(--color-border-soft);
+      --bs-table-striped-bg: #f9fafb;
+      color: var(--color-text-main);
+    }
+
+    .table-dark-custom thead th {
+      border-bottom-color: var(--color-border-strong);
+      font-size: 0.8rem;
+    }
+
+    .table-dark-custom tbody tr td {
+      border-color: var(--color-border-soft);
+      font-size: 0.8rem;
+    }
+
+    .table-dark-custom tfoot td {
+      border-top-color: var(--color-border-strong);
+    }
+
+    .form-check-label {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .form-check-input:checked {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    canvas {
+      max-height: 360px;
+    }
+
+    .nav-tabs-custom .nav-link {
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      border: 1px solid transparent;
+      margin-left: 6px;
+      margin-right: 0;
+      background: transparent;
+    }
+
+    .nav-tabs-custom .nav-link.active {
+      color: var(--color-text-main);
+      background-color: #ffffff;
+      border-color: var(--color-border-soft);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35);
+    }
+
+    .header-sub {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    @media (max-width: 992px) {
+      .main-shell {
+        padding: 16px;
+      }
+      canvas {
+        max-height: 320px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-shell {
+        padding: 12px;
+      }
+      h1.h5 {
+        font-size: 1rem;
+      }
+      .kpi-value {
+        font-size: 1.15rem;
+      }
+      .card-dashboard {
+        padding: 14px 14px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      canvas {
+        max-height: 260px;
+      }
+    }
+  </style>
+</head>
+<body ng-controller="MainCtrl">
+
+<div class="main-shell">
+  <div class="container-fluid p-0">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-center">
+      <div class="col-12 col-lg-8">
+        <div class="d-flex flex-column gap-1">
+          <div class="badge-live mb-1">
+            <span class="dot"></span>
+            Simulação financeira – Taxa de evolução da obra
+          </div>
+          <h1 class="h5 mb-0">
+            Jardim Armação Prime – Visão completa de custos
+          </h1>
+          <div class="header-sub">
+            Comparativo entre unidade com obra a iniciar (0%) e unidade já em 17%, considerando taxa de obra
+            até a entrega / início das pós-chaves (mar/2027).
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4 text-lg-end mt-2 mt-lg-0">
+        <small class="d-block header-sub">
+          Cliente: <strong>Daniela Silva Rodrigues</strong>
+        </small>
+        <small class="d-block header-sub">
+          Financiamento: <strong>R$ 252.960,00</strong> · Prazo: <strong>420 meses</strong>
+        </small>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="row mb-3">
+      <div class="col-12 d-flex justify-content-between align-items-center">
+        <ul class="nav nav-tabs nav-tabs-custom border-0">
+          <li class="nav-item">
+            <button
+              class="nav-link"
+              ng-class="{active: tab === 'resumo'}"
+              ng-click="tab = 'resumo'"
+            >
+              Visão consolidada
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="nav-link"
+              ng-class="{active: tab === 'fluxo'}"
+              ng-click="tab = 'fluxo'"
+            >
+              Fluxo mensal detalhado
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ABA 1 – RESUMO CONSOLIDADO -->
+    <div ng-show="tab === 'resumo'">
+
+      <!-- KPI Row -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <div class="kpi-card">
+            <div class="kpi-label">Cenário A – Obra a iniciar (0 → 100%)</div>
+            <div class="kpi-value">
+              {{ totalA | currency:'R$ ':0 }}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <span class="kpi-tag unit-a">
+                <span class="color-dot"></span>
+                Unidade sem obra iniciada
+              </span>
+              <small class="header-sub text-end">
+                Taxa até chaves:<br>{{ taxaA | currency:'R$ ':0 }}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="kpi-card">
+            <div class="kpi-label">Cenário B – Obra já em 17% (17 → 100%)</div>
+            <div class="kpi-value">
+              {{ totalB | currency:'R$ ':0 }}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <span class="kpi-tag unit-b">
+                <span class="color-dot"></span>
+                Unidade no estágio atual (17%)
+              </span>
+              <small class="header-sub text-end">
+                Taxa até chaves:<br>{{ taxaB | currency:'R$ ':0 }}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="kpi-card">
+            <div class="kpi-label">Diferença total por taxa de obra</div>
+            <div class="kpi-value text-warning">
+              {{ diff | currency:'R$ ':0 }}
+            </div>
+            <div class="mt-2">
+              <small class="header-sub">
+                Gap adicional estimado na unidade já em 17% apenas pela taxa de obra,
+                considerando todo o ciclo até mar/2027.
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="row g-3">
+        <!-- Chart Card -->
+        <div class="col-12 col-lg-7">
+          <div class="card-dashboard mb-3 mb-lg-0">
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+              <div>
+                <div class="card-section-title">Fluxo mensal</div>
+                <div class="fw-semibold" style="font-size:0.9rem;">
+                  Pré-chaves + taxa de obra · 15 meses (dez/2025 → fev/2027)
+                </div>
+              </div>
+              <div class="d-flex flex-column align-items-lg-end">
+                <small class="header-sub">Pré-chaves: 14 × R$ 1.826,00</small>
+                <small class="header-sub">Taxa: R$ 1.817,00 × % avanço</small>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end mb-2 gap-3 flex-wrap">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="toggleA" checked>
+                <label class="form-check-label" for="toggleA">
+                  Cenário A – 0% → 100%
+                </label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="toggleB" checked>
+                <label class="form-check-label" for="toggleB">
+                  Cenário B – 17% → 100%
+                </label>
+              </div>
+            </div>
+
+            <div style="height: 360px;">
+              <canvas id="evolucaoChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table / Breakdown Card -->
+        <div class="col-12 col-lg-5">
+          <div class="card-dashboard">
+            <div class="card-section-title">Componentes de custo</div>
+            <div class="fw-semibold mb-2" style="font-size:0.9rem;">
+              Ato, pré-chaves, intermediária, taxa de obra, financiamento e TCD
+            </div>
+
+            <div class="table-responsive mb-2">
+              <table class="table table-sm table-striped table-dark-custom align-middle">
+                <thead>
+                  <tr>
+                    <th>Componente</th>
+                    <th>Cenário A</th>
+                    <th>Cenário B</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Ato à vista</td>
+                    <td>R$ 28.000,00</td>
+                    <td>R$ 28.000,00</td>
+                  </tr>
+                  <tr>
+                    <td>Pré-chaves (14 × 1.826)</td>
+                    <td>R$ 25.564,00</td>
+                    <td>R$ 25.564,00</td>
+                  </tr>
+                  <tr>
+                    <td>Intermediária (01/11/2026)</td>
+                    <td>R$ 8.939,77</td>
+                    <td>R$ 8.939,77</td>
+                  </tr>
+                  <tr>
+                    <td>Taxa de obra (dez/25 → fev/27)</td>
+                    <td>{{ taxaA | currency:'R$ ':2 }}</td>
+                    <td>{{ taxaB | currency:'R$ ':2 }}</td>
+                  </tr>
+                  <tr>
+                    <td>Financiamento (420 × 1.817,75)</td>
+                    <td>R$ 763.455,00</td>
+                    <td>R$ 763.455,00</td>
+                  </tr>
+                  <tr>
+                    <td>TCD (72 × 419)</td>
+                    <td>R$ 30.168,00</td>
+                    <td>R$ 30.168,00</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="fw-semibold">
+                    <td>Total estimado (taxa até chaves)</td>
+                    <td>{{ totalA | currency:'R$ ':2 }}</td>
+                    <td>{{ totalB | currency:'R$ ':2 }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <h6 class="mt-3" style="font-size:0.8rem;">Cenários de cobrança da taxa de obra</h6>
+            <div class="table-responsive mb-2">
+              <table class="table table-sm table-striped table-dark-custom align-middle">
+                <thead>
+                  <tr>
+                    <th>Modelo</th>
+                    <th>Cenário A (0% → 100%)</th>
+                    <th>Cenário B (17% → 100%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Taxa só durante pré-chaves (14 meses)</td>
+                    <td>
+                      Taxa: {{ taxaA_14 | currency:'R$ ':2 }}<br/>
+                      Total: {{ totalA_14 | currency:'R$ ':2 }}
+                    </td>
+                    <td>
+                      Taxa: {{ taxaB_14 | currency:'R$ ':2 }}<br/>
+                      Total: {{ totalB_14 | currency:'R$ ':2 }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Taxa até entrega das chaves (15 meses)</td>
+                    <td>
+                      Taxa: {{ taxaA | currency:'R$ ':2 }}<br/>
+                      Total: {{ totalA | currency:'R$ ':2 }}
+                    </td>
+                    <td>
+                      Taxa: {{ taxaB | currency:'R$ ':2 }}<br/>
+                      Total: {{ totalB | currency:'R$ ':2 }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <small class="header-sub" style="font-size:0.75rem;">
+              Premissas: evolução da obra de 0→100% e 17→100% em 15 competências
+              (dez/2025 a fev/2027), com 14 parcelas de pré-chaves e, após o fim das
+              pré-chaves, manutenção apenas da taxa de obra até a data prevista de
+              início das pós-chaves (mar/2027). A curva real de medição pode variar
+              conforme construtora/banco.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 2 – FLUXO MENSAL DETALHADO -->
+    <div ng-show="tab === 'fluxo'">
+      <div class="row">
+        <div class="col-12">
+          <div class="card-dashboard">
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+              <div>
+                <div class="card-section-title">Fluxo mensal detalhado</div>
+                <div class="fw-semibold" style="font-size:0.9rem;">
+                  Pagamento por competência (pré-chaves + taxa de obra)
+                </div>
+              </div>
+              <div class="text-lg-end">
+                <small class="header-sub d-block">
+                  Janela: dez/2025 → fev/2027 (15 meses)
+                </small>
+                <small class="header-sub d-block">
+                  Último mês: apenas taxa de obra (sem pré-chave)
+                </small>
+              </div>
+            </div>
+
+            <div class="table-responsive mb-2">
+              <table class="table table-sm table-striped table-dark-custom align-middle">
+                <thead>
+                  <tr>
+                    <th>Mês / Ref.</th>
+                    <th>% Obra A</th>
+                    <th>Taxa A (R$)</th>
+                    <th>Total Mês A (R$)</th>
+                    <th>% Obra B</th>
+                    <th>Taxa B (R$)</th>
+                    <th>Total Mês B (R$)</th>
+                  </tr>
+                </thead>
+                <tbody id="fluxo-body">
+                  <!-- linhas preenchidas via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="row mt-2">
+              <div class="col-12 col-md-6">
+                <small class="header-sub" style="font-size:0.8rem;">
+                  Cada linha representa uma competência mensal com a soma:
+                  pré-chave (quando aplicável) + taxa de obra calculada sobre
+                  R$ 1.817,00 conforme o percentual de avanço físico da obra
+                  no cenário analisado.
+                </small>
+              </div>
+              <div class="col-12 col-md-6 text-md-end mt-2 mt-md-0">
+                <small class="header-sub" style="font-size:0.8rem;">
+                  O comparativo A × B evidencia o impacto financeiro de assumir
+                  um empreendimento já em 17% de execução vs. um ciclo completo
+                  0% → 100%, considerando o mesmo horizonte de entrega.
+                </small>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+  crossorigin="anonymous"
+></script>
+
+<script>
+  // AngularJS – números consolidados
+  const app = angular.module('dashboardApp', []);
+
+  app.controller('MainCtrl', function($scope) {
+    $scope.taxaA  = 13627.50;   // Cenário A – 0 → 100 %
+    $scope.taxaB  = 15944.17;   // Cenário B – 17 → 100 %
+
+    $scope.taxaA_14 = 12719.00;   // 0 → 100 % em 14 meses
+    $scope.taxaB_14 = 14881.23;   // 17 → 100 % em 14 meses
+
+    $scope.totalA = 869754.27;      // Cenário A – taxa até chaves
+    $scope.totalB = 872070.95;      // Cenário B – taxa até chaves
+
+    $scope.totalA_14 = 868845.77;   // Cenário A – taxa só pré-chaves
+    $scope.totalB_14 = 871008.00;   // Cenário B – taxa só pré-chaves
+
+    $scope.diff   = $scope.totalB - $scope.totalA;
+
+    $scope.tab = 'resumo';
+  });
+
+  // Dados base
+  const labels = [
+    "Dez/25", "Jan/26", "Fev/26", "Mar/26", "Abr/26",
+    "Mai/26", "Jun/26", "Jul/26", "Ago/26", "Set/26",
+    "Out/26", "Nov/26", "Dez/26", "Jan/27", "Fev/27"
+  ];
+
+  const parcelaPre = 1826.00;
+  const baseTaxa   = 1817.00;
+  const nMeses = 15;
+
+  const percA = [];
+  const percB = [];
+
+  for (let i = 0; i < nMeses; i++) {
+    percA.push(0 + (100 - 0) * i / (nMeses - 1));
+    percB.push(17 + (100 - 17) * i / (nMeses - 1));
+  }
+
+  const totalMesA = [];
+  const totalMesB = [];
+  const taxaMesA  = [];
+  const taxaMesB  = [];
+
+  for (let i = 0; i < nMeses; i++) {
+    const tA = baseTaxa * (percA[i] / 100);
+    const tB = baseTaxa * (percB[i] / 100);
+
+    taxaMesA.push(tA);
+    taxaMesB.push(tB);
+
+    if (i < 14) {
+      totalMesA.push(parcelaPre + tA);
+      totalMesB.push(parcelaPre + tB);
+    } else {
+      totalMesA.push(tA);
+      totalMesB.push(tB);
+    }
+  }
+
+  function formatMoney(v) {
+    return 'R$ ' + v.toFixed(2).replace('.', ',');
+  }
+
+  function formatPercent(v) {
+    return v.toFixed(2).replace('.', ',') + '%';
+  }
+
+  const fluxoBody = document.getElementById('fluxo-body');
+  if (fluxoBody) {
+    for (let i = 0; i < nMeses; i++) {
+      const tr = document.createElement('tr');
+
+      const tdMes = document.createElement('td');
+      tdMes.textContent = `M${i + 1} (${labels[i]})`;
+
+      const tdPercA = document.createElement('td');
+      tdPercA.textContent = formatPercent(percA[i]);
+
+      const tdTaxaA = document.createElement('td');
+      tdTaxaA.textContent = formatMoney(taxaMesA[i]);
+
+      const tdTotalA = document.createElement('td');
+      tdTotalA.textContent = formatMoney(totalMesA[i]);
+
+      const tdPercB = document.createElement('td');
+      tdPercB.textContent = formatPercent(percB[i]);
+
+      const tdTaxaB = document.createElement('td');
+      tdTaxaB.textContent = formatMoney(taxaMesB[i]);
+
+      const tdTotalB = document.createElement('td');
+      tdTotalB.textContent = formatMoney(totalMesB[i]);
+
+      tr.appendChild(tdMes);
+      tr.appendChild(tdPercA);
+      tr.appendChild(tdTaxaA);
+      tr.appendChild(tdTotalA);
+      tr.appendChild(tdPercB);
+      tr.appendChild(tdTaxaB);
+      tr.appendChild(tdTotalB);
+
+      fluxoBody.appendChild(tr);
+    }
+  }
+
+  const ctx = document.getElementById('evolucaoChart').getContext('2d');
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Cenário A – Obra a iniciar (0% → 100%)',
+          data: totalMesA,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 3,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.16)',
+          fill: true
+        },
+        {
+          label: 'Cenário B – Obra já em 17% (17% → 100%)',
+          data: totalMesB,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 3,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.16)',
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#111827',
+            font: { size: 11 }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const val = ctx.parsed.y || 0;
+              return ctx.dataset.label + ': ' +
+                'R$ ' + val.toFixed(2).replace('.', ',');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#6b7280',
+            font: { size: 10 }
+          },
+          grid: { color: 'rgba(209, 213, 219, 0.7)' }
+        },
+        y: {
+          ticks: {
+            color: '#6b7280',
+            font: { size: 10 },
+            callback: function(value) {
+              return 'R$ ' + value.toFixed(0);
+            }
+          },
+          grid: { color: 'rgba(209, 213, 219, 0.7)' }
+        }
+      }
+    }
+  });
+
+  document.getElementById('toggleA').addEventListener('change', function(e) {
+    chart.data.datasets[0].hidden = !e.target.checked;
+    chart.update();
+  });
+
+  document.getElementById('toggleB').addEventListener('change', function(e) {
+    chart.data.datasets[1].hidden = !e.target.checked;
+    chart.update();
+  });
+</script>
+
+</body>
+</html>
