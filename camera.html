@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection"></script>
+
 <style>
 body{margin:0;background:#000;color:#fff;font-family:Arial}
 video,canvas{position:absolute;width:100%;height:100%;object-fit:cover}
-#ui{position:fixed;bottom:0;width:100%;background:#111;padding:10px}
-button,select{padding:8px;margin:5px}
+#ui{position:fixed;bottom:0;width:100%;background:#111;padding:10px;z-index:9}
+button,select{padding:10px;margin:5px}
 </style>
+
 </head>
 
 <body>
@@ -25,53 +29,103 @@ button,select{padding:8px;margin:5px}
 </div>
 
 <script>
+
 let video=document.getElementById('video')
 let canvas=document.getElementById('canvas')
 let ctx=canvas.getContext('2d')
-let stream
-let track
-let detector
-let last=0
+
+let stream=null
+let track=null
+let detector=null
+let lastTrigger=0
+
+// ---------------------
+// CARREGAR DETECTOR
+// ---------------------
 
 async function loadDetector(){
+
+await tf.setBackend('webgl')
+await tf.ready()
+
 const model=faceDetection.SupportedModels.MediaPipeFaceDetector
-detector=await faceDetection.createDetector(model,{runtime:'tfjs',maxFaces:1})
+
+detector=await faceDetection.createDetector(model,{
+runtime:'tfjs',
+solutionPath:'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection'
+})
+
 }
 
+// ---------------------
+// LISTAR CÂMERAS (NECESSÁRIO PERMISSÃO)
+// ---------------------
+
 async function getCameras(){
+
+let temp=await navigator.mediaDevices.getUserMedia({video:true})
+temp.getTracks().forEach(t=>t.stop())
+
 const devices=await navigator.mediaDevices.enumerateDevices()
 const cams=devices.filter(d=>d.kind==='videoinput')
+
 let select=document.getElementById("cameraSelect")
 select.innerHTML=""
+
 cams.forEach(c=>{
 let option=document.createElement("option")
 option.value=c.deviceId
-option.text=c.label||"Camera"
+option.text=c.label || "Camera"
 select.appendChild(option)
 })
+
 }
 
+// ---------------------
+// INICIAR CÂMERA
+// ---------------------
+
 async function startCamera(){
+
 if(stream)stopCamera()
 
 await loadDetector()
 
-let id=document.getElementById("cameraSelect").value
+const devices=await navigator.mediaDevices.enumerateDevices()
 
-stream=await navigator.mediaDevices.getUserMedia({
-video:{deviceId:id?{exact:id}:undefined}
-})
+let backCam=devices.find(d=>
+d.kind==="videoinput" &&
+d.label.toLowerCase().includes("back")
+)
+
+let constraints={
+video: backCam ?
+{deviceId:{exact:backCam.deviceId}} :
+{facingMode:{ideal:"environment"}}
+}
+
+stream=await navigator.mediaDevices.getUserMedia(constraints)
 
 video.srcObject=stream
 track=stream.getVideoTracks()[0]
+
 detectLoop()
+
 }
+
+// ---------------------
+// PARAR
+// ---------------------
 
 function stopCamera(){
 if(stream){
 stream.getTracks().forEach(t=>t.stop())
 }
 }
+
+// ---------------------
+// FLASH
+// ---------------------
 
 async function toggleFlash(){
 try{
@@ -80,23 +134,39 @@ setTimeout(()=>track.applyConstraints({advanced:[{torch:false}]}),200)
 }catch(e){}
 }
 
+// ---------------------
+// ALERTA SONORO
+// ---------------------
+
 function beep(){
-let ctxAudio=new AudioContext()
-let osc=ctxAudio.createOscillator()
-osc.connect(ctxAudio.destination)
+
+let audio=new AudioContext()
+let osc=audio.createOscillator()
+osc.connect(audio.destination)
 osc.start()
-osc.stop(ctxAudio.currentTime+0.1)
+osc.stop(audio.currentTime+0.1)
+
 }
 
+// ---------------------
+// LOOP DE DETECÇÃO
+// ---------------------
+
 async function detectLoop(){
+
 canvas.width=video.videoWidth
 canvas.height=video.videoHeight
-let faces=await detector.estimateFaces(video)
+
+let faces=await detector.estimateFaces(video,{
+flipHorizontal:false
+})
 
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
 if(faces.length>0){
+
 let f=faces[0]
+
 ctx.strokeStyle="lime"
 ctx.lineWidth=3
 ctx.strokeRect(f.box.xMin,f.box.yMin,f.box.width,f.box.height)
@@ -110,27 +180,38 @@ let centerY=canvas.height/2
 let dx=Math.abs(cx-centerX)
 let dy=Math.abs(cy-centerY)
 
+// olhando
 if(dx<100 && dy<100){
-if(Date.now()-last>3000){
-last=Date.now()
+
+if(Date.now()-lastTrigger>3000){
+
+lastTrigger=Date.now()
 
 let snap=document.createElement("canvas")
 snap.width=canvas.width
 snap.height=canvas.height
 snap.getContext("2d").drawImage(video,0,0)
-snap.toBlob(b=>console.log("Foto capturada"))
+
+snap.toBlob(b=>console.log("foto capturada"))
 
 beep()
 navigator.vibrate(200)
 toggleFlash()
+
 }
+
 }
+
 }
 
 requestAnimationFrame(detectLoop)
+
 }
 
+// ---------------------
+
 getCameras()
+
 </script>
 
 </body>
