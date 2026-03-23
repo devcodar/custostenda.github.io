@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Launch Simulator</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-black text-white min-h-screen flex flex-col items-center justify-center px-6">
+
+  <!-- HERO -->
+  <div class="max-w-3xl text-center space-y-6">
+    <h1 class="text-4xl md:text-6xl font-bold">
+      Descubra se sua ideia vai dar dinheiro antes de investir
+    </h1>
+
+    <p class="text-gray-300 text-lg">
+      Simule seu negócio com IA e veja a probabilidade real de sucesso.
+    </p>
+
+    <textarea id="idea"
+      class="w-full p-4 rounded-xl text-black"
+      placeholder="Descreva sua ideia..."
+    ></textarea>
+
+    <button onclick="simulate()"
+      class="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:scale-105 transition">
+      Simular agora
+    </button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result" class="hidden mt-12 text-center space-y-6 max-w-3xl w-full">
+
+    <h2 class="text-2xl font-bold">Resultado</h2>
+
+    <div class="flex justify-center gap-10">
+      <div>
+        <p class="text-gray-400">Lucro Médio</p>
+        <p id="profit" class="text-xl font-bold"></p>
+      </div>
+
+      <div>
+        <p class="text-gray-400">Chance de Sucesso</p>
+        <p id="success" class="text-xl font-bold"></p>
+      </div>
+    </div>
+
+    <canvas id="chart"></canvas>
+
+    <p id="analysis" class="text-gray-300"></p>
+
+  </div>
+
+<script>
+
+function random(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function simulate() {
+  const results = [];
+
+  for (let i = 0; i < 1000; i++) {
+    const traffic = Math.floor(random(100, 1000));
+    const conversion = random(0.01, 0.1);
+    const ticket = Math.floor(random(29, 97));
+    const cac = Math.floor(random(5, 40));
+
+    const revenue = traffic * conversion * ticket;
+    const cost = traffic * cac;
+    const profit = revenue - cost;
+
+    results.push(profit);
+  }
+
+  const avg = results.reduce((a, b) => a + b, 0) / results.length;
+  const success = results.filter(r => r > 0).length / results.length;
+
+  document.getElementById("result").classList.remove("hidden");
+
+  document.getElementById("profit").innerText =
+    "R$ " + avg.toFixed(2);
+
+  document.getElementById("success").innerText =
+    (success * 100).toFixed(1) + "%";
+
+  // gráfico
+  const ctx = document.getElementById('chart');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: results.slice(0, 50),
+      datasets: [{
+        label: 'Simulação',
+        data: results.slice(0, 50)
+      }]
+    }
+  });
+
+  // análise simples (sem IA)
+  let text = "";
+
+  if (success > 0.7) {
+    text = "Alta probabilidade de sucesso. Vale testar no mercado.";
+  } else if (success > 0.4) {
+    text = "Risco moderado. Ajuste preço ou aquisição.";
+  } else {
+    text = "Alto risco. Reavaliar modelo.";
+  }
+
+  document.getElementById("analysis").innerText = text;
+}
+
+</script>
+
+</body>
+</html>
